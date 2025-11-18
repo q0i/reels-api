@@ -1,3 +1,4 @@
 instaloader
 flask
 flask-cors
+gunicorn
