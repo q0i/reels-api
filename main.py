@@ -1,44 +1,16 @@
-# main.py  (Railway entry point:  gunicorn main:app)
-from flask import Flask, request, send_file, jsonify
-import instaloader
-import tempfile
-import os
-import uuid
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/", methods=["POST"])
-def download_instagram_video():
-    url = request.json.get("url")
-    if not url:
-        return jsonify({"error": "missing url"}), 400
-
-    try:
-        L = instaloader.Instaloader()
-        shortcode = url.split("/")[-2]
-        post = instaloader.Post.from_shortcode(L.context, shortcode)
-
-        if not post.is_video:
-            return jsonify({"error": "post is not a video"}), 400
-
-        tmp = tempfile.mkdtemp()
-        L.download_post(post, target=tmp)
-
-        for fname in os.listdir(tmp):
-            if fname.endswith(".mp4"):
-                return send_file(os.path.join(tmp, fname), as_attachment=True)
-
-        return jsonify({"error": "mp4 not found"}), 500
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# (optional) health-check
-@app.route("/", methods=["GET"])
-def health():
-    return "ok"
-
+@app.route("/", methods=["GET", "POST"])
+def debug():
+    # return exactly what we received
+    return jsonify(
+        method=request.method,
+        content_type=request.headers.get("Content-Type"),
+        body=request.get_data(as_text=True),
+        url_root=request.url_root
+    ), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
